@@ -26,8 +26,7 @@ const HospitalEntryDetails = ({entry}: {entry: HospitalEntry}) => (
   </div>
 );
 
-const OccupationalHealthcareEntryDetails = 
-  ({entry}: {entry: OccupationalHealthcareEntry}) => (
+const OccupationalHealthcareEntryDetails = ({entry}: {entry: OccupationalHealthcareEntry}) => (
   <div>
     {entry.sickLeave && (
       <div>sickleave from {entry.sickLeave.startDate} to {entry.sickLeave.endDate}</div>
@@ -35,13 +34,9 @@ const OccupationalHealthcareEntryDetails =
   </div>
 );
 
-const HealthCheckEntryDetails =
-  ({entry}: {entry: HealthCheckEntry}) => {
-  const rating:number = entry.healthCheckRating;
-  return (
-    <HealthRatingBar rating={rating} showText={false}/>
-  );
-};
+const HealthCheckEntryDetails = ({entry}: {entry: HealthCheckEntry}) => (
+  <HealthRatingBar rating={entry.healthCheckRating} showText={false}/>
+);
 
 const assertNever = (value: never): never => {
   throw new Error(
@@ -49,11 +44,7 @@ const assertNever = (value: never): never => {
   );
 };
 
-interface EntryDetailsProps {
-  entry: Entry
-}
-
-const EntryDetails = ({entry}: EntryDetailsProps ) => {
+const EntryDetails = ({entry}: {entry: Entry }) => {
   switch (entry.type) {
     case "Hospital":
       return <HospitalEntryDetails entry={entry} />;
@@ -117,28 +108,30 @@ const PatientPage = ({diagnoses}: PatientPageProps) => {
       <div>date of birth: {patient.dateOfBirth}</div>
       <div>occupation: {patient.occupation}</div>
       <h3>entries</h3>
-      {patient.entries.map(e => (
-        <div key={e.id} style={entryStyle}>
+      {patient.entries.map(entry => (
+        <div key={entry.id} style={entryStyle}>
           <div>
-            {e.date}&nbsp;
-            {e.type==="HealthCheck" && <MonitorHeartIcon />}
-            {e.type==="Hospital" && <LocalHospitalIcon />}
-            {e.type==="OccupationalHealthcare" &&  <WorkIcon />}
-            {e.type==="OccupationalHealthcare" &&  ' ' + e.employerName}
+            {entry.date}&nbsp;
+            {entry.type==="HealthCheck" && <MonitorHeartIcon />}
+            {entry.type==="Hospital" && <LocalHospitalIcon />}
+            {entry.type==="OccupationalHealthcare" &&  <WorkIcon />}
+            {entry.type==="OccupationalHealthcare" &&  ' ' + entry.employerName}
           </div>
-          <div><i>{e.description}</i></div>
-          {e.diagnosisCodes && (
+          <div><i>{entry.description}</i></div>
+          
+          {entry.diagnosisCodes && (
             <ul>
-              {e.diagnosisCodes.map(dc => (
-                <li key={dc}>
-                  {dc}&nbsp;
-                  {diagnosisName(dc)}
+              {entry.diagnosisCodes.map(code => (
+                <li key={code}>
+                  {code}&nbsp;
+                  {diagnosisName(code)}
                 </li>
               ))}
             </ul>
           )}
-          <EntryDetails entry={e} />
-          <div>diagnose by {e.specialist}</div>
+
+          <EntryDetails entry={entry} />
+          <div>diagnose by {entry.specialist}</div>
         </div>
       ))}
     </div>
