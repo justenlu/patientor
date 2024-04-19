@@ -64,3 +64,11 @@ export type Entry =
   | HospitalEntry
   | OccupationalHealthcareEntry
   | HealthCheckEntry;
+
+// Define special omit for unions --------------------------------------------------------------------
+// By: Andrii Dieiev
+// From: https://github.com/microsoft/TypeScript/issues/39556#issuecomment-656925230
+type SimpleUnionOmit<T, K extends string | number | symbol> = T extends unknown ? Omit<T, K> : never;
+//----------------------------------------------------------------------------------------------------
+
+export type EntryFormValues = SimpleUnionOmit<Entry, 'id' | 'entries'>;

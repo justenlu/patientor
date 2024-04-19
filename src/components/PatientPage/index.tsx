@@ -1,19 +1,23 @@
 import { useEffect, useState } from "react";
-import { Gender, Patient } from "../types";
+import { Gender, Patient } from "../../types";
 import { useParams } from 'react-router-dom';
-import patientService from "../services/patients";
+import patientService from "../../services/patients";
 import { Diagnosis, 
   Entry, 
   HospitalEntry, 
   OccupationalHealthcareEntry,
-  HealthCheckEntry } from "../types";
+  HealthCheckEntry,
+  EntryFormValues } from "../../types";
 
 import WorkIcon from '@mui/icons-material/Work';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import MaleIcon from '@mui/icons-material/Male';
 import FemaleIcon from '@mui/icons-material/Female';
-import HealthRatingBar from "./HealthRatingBar";
+import HealthRatingBar from "../HealthRatingBar";
+import AddEntryForm from './AddEntryForm';
+import axios from "axios";
+import Alert from '@mui/material/Alert';
 
 
 interface PatientPageProps {
@@ -59,24 +63,58 @@ const EntryDetails = ({entry}: {entry: Entry }) => {
 
 const PatientPage = ({diagnoses}: PatientPageProps) => {
   const [patient, setPatient] = useState<Patient | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const id = useParams().id;
+  const patientId = useParams().id;
 
   useEffect(() => {
-    if (id) {
+    if (patientId) {
       const fetchPatient = async () => {
-        const patient = await patientService.getOne(id);
+        const patient = await patientService.getOne(patientId);
         setPatient(patient);
       };
       void fetchPatient();
     }
-  }, [id]);
+  }, [patientId]);
 
   if (!patient) {
     return (
       <div>Loading data...</div>
     );
   }
+
+  const submitNewEntry = async (values: EntryFormValues, afterSuccess: () => void) => {
+    try {
+      if (patientId && patient) {
+        const entry = await patientService.addEntry(patientId, values);
+        setPatient({
+          ...patient,
+          entries: patient.entries.concat(entry)
+        });
+        afterSuccess();
+      }
+    } catch (e: unknown) {
+      if (axios.isAxiosError(e)) {
+        if (e?.response?.data && typeof e?.response?.data === "string") {
+          const message = e.response.data.replace('Something went wrong. Error: ', '');
+          console.error(message);
+          showError(message);
+        } else {
+          showError("Unrecognized axios error");
+        }
+      } else {
+        console.error("Unknown error", e);
+        showError("Unknown error");
+      }
+    }
+  };
+
+  const showError = (message: string) => {
+    setError(message);
+    setTimeout(() => {
+      setError(null);
+    }, 5000);
+  };
 
   const diagnosisName = (code: string):string => {
     const diagnosis:Diagnosis | undefined = diagnoses.find(d => d.code===code);
@@ -107,6 +145,9 @@ const PatientPage = ({diagnoses}: PatientPageProps) => {
       <div>ssn: {patient.ssn}</div>
       <div>date of birth: {patient.dateOfBirth}</div>
       <div>occupation: {patient.occupation}</div>
+      {error && <Alert severity="error">{error}</Alert>}
+      <br />
+      <AddEntryForm onSubmit={submitNewEntry}/>
       <h3>entries</h3>
       {patient.entries.map(entry => (
         <div key={entry.id} style={entryStyle}>
